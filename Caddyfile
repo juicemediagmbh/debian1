@@ -1,0 +1,41 @@
+n8n.dennishorstmann.de {
+        reverse_proxy n8n:5678
+}
+
+web.dennishorstmann.de {
+        reverse_proxy webserver:80
+}
+
+pgadmin.dennishorstmann.de {
+        reverse_proxy pgadmin:80
+}
+
+# Emil's Website - direkte Domain
+emilhorstmann.com {
+        reverse_proxy emilhorstmann-nginx:80
+}
+
+www.emilhorstmann.com {
+        reverse_proxy emilhorstmann-nginx:80
+}
+
+# Dennis Horstmann Website
+dennishorstmann.de {
+        reverse_proxy dennishorstmann-nginx:80
+}
+
+www.dennishorstmann.de {
+        reverse_proxy dennishorstmann-nginx:80
+}
+
+# SFTPGo Web-Interface (nur bestimmte IPs)
+ftp.dennishorstmann.de {
+        @allowed_ips remote_ip 192.168.1.0/24 10.0.0.0/8 172.16.0.0/12 170.133.5.1
+        reverse_proxy @allowed_ips sftpgo:8080
+        respond @allowed_ips 403 "Zugriff verweigert"
+}
+
+# Öffentliches Share-Verzeichnis
+share.dennishorstmann.de {
+        reverse_proxy share-server:80
+}
