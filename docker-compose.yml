@@ -1,1 +1,126 @@
-e
+name: root
+
+services:
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - /root/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - my_proxy_network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+  n8n:
+    image: n8nio/n8n
+    restart: unless-stopped
+    environment:
+      - N8N_ENCRYPTION_KEY=2T1fDcMBGCBNN7qkuM+pjk1DfarxGaBC
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_EDITOR_BASE_URL=https://n8n.dennishorstmann.de
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=BRuTX7sojbmzd9VD6
+      - N8N_HOST=n8n.dennishorstmann.de
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.dennishorstmann.de
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /root/n8n-files:/files
+    networks:
+      - my_proxy_network
+
+ webserver:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - GIT_REPO=${GIT_REPO:-https://github.com/juicemediagmbh/dennishorstmann.git}
+      - GIT_BRANCH=${GIT_BRANCH:-master}
+    volumes:
+      - website_data:/var/www/html
+    networks:
+      - my_proxy_network
+
+  database:
+    image: pgvector/pgvector:pg17
+    environment:
+      - POSTGRES_DB=brain_db
+      - POSTGRES_USER=dennis
+      - POSTGRES_PASSWORD=2fVK3NXgaQLfak8xjnW3
+      - TZ=Europe/Berlin
+    ports:
+      - "5432:5432"
+    volumes:
+      - database_data_pg17:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dennis -d brain_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - my_proxy_network
+
+pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: info@juicemedia.de
+      PGADMIN_DEFAULT_PASSWORD: xvg8_YcNhLaKL3TwzP
+    ports:
+      - "5050:80"
+    depends_on:
+      - database
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    networks:
+      - my_proxy_network
+
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    networks:
+      - my_proxy_network
+
+networks:
+  my_proxy_network:
+
+volumes:
+  caddy_data:
+    external: true
+    name: root_caddy_data
+  caddy_config:
+    external: true
+    name: root_caddy_config
+  n8n_data:
+    external: true
+    name: root_n8n_data
+  database_data_pg17:
+    external: true
+    name: root_database_data_pg17
+  pgadmin_data:
+    external: true
+    name: root_pgadmin_data
+  ollama:
+    # lokales Volume für Ollama-Modelle
+    # (absichtlich nicht external, damit Docker es erstellt)
+  website_data:
+    # Volume für Website-Daten
