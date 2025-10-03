@@ -39,3 +39,10 @@ ftp.dennishorstmann.de {
 share.dennishorstmann.de {
         reverse_proxy share-server:80
 }
+
+# SFTP-Zugriff über Caddy (nur bestimmte IPs)
+sftp.dennishorstmann.de {
+        @allowed_ips remote_ip 192.168.1.0/24 10.0.0.0/8 172.16.0.0/12 170.133.5.1
+        reverse_proxy @allowed_ips sftpgo:2022
+        respond @allowed_ips 403 "Zugriff verweigert"
+}
